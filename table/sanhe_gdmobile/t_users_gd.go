@@ -19,3 +19,7 @@ type TUsersGd struct {
 	Cancelled        int        `json:"cancelled,omitempty" gorm:"column:cancelled;type:tinyint(2);not null;default:0"`           // 是否取消了授权:1=是|0=否
 	Code             string     `json:"code,omitempty" gorm:"column:code;type:varchar(6) DEFAULT;null"`                           // 手机验证码
 }
+
+type TUsersGdMobile struct {
+	Mobile           string     `json:"mobile,omitempty" gorm:"column:mobile;type:varchar(30) DEFAULT;null"`                      // 支付宝绑定的手机号
+}
