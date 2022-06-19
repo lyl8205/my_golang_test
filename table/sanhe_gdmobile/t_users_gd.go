@@ -22,4 +22,5 @@ type TUsersGd struct {
 
 type TUsersGdMobile struct {
 	Mobile           string     `json:"mobile,omitempty" gorm:"column:mobile;type:varchar(30) DEFAULT;null"`                      // 支付宝绑定的手机号
+	Uid              string     `json:"uid,omitempty" gorm:"column:uid;type:varchar(50) DEFAULT;null"`                            // 支付宝用户uid
 }

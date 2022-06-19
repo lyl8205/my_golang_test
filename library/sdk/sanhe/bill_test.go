@@ -1,0 +1,23 @@
+package sanhe
+
+import (
+	"testing"
+	"time"
+)
+
+var (
+	appid      = `2019031863556379`
+	privateKey = `MIIEpAIBAAKCAQEAymxswKxWVk2ABsv9xi9MAlxu1gCr2JquDM69+3PJVvrvT1IIOfT9zqQBXsuPJB91nDNqxT1iFuBP4AwI0Y1QRI5z212StB5P0papWmBjRXCpulU+ntmOJV4vk+xWbP7Hy5El0rwdW41o9N6cgnFftFe5KMrOCql1nPgVEwJDylf0YvdODFQUlLHXlG9OK47ik8MBkaGv6sItHOcdlXgMvGM8MtyTVFG9wFX7zD53uDdBysspFSiCaKetIR1dwrAVPqkVWM/R+rxVNiaoeWpbNdbnwbZJlXRpL1PkUd2SR7O22Z2LlQCmO6voOWyIQGO5cW6n58QiiHJ32daaKUz8ewIDAQABAoIBAE/SL5ROoQEJMIn9mMW00uE/d8lVnG4emLGeONZWEzgEXafGrk3EaO06SPwLgxd4fFUrBVhf2zUwIO81b6jKc7OFBPSk0nvKVCmzlXZ4+cxhH9zFTpsvKNldaZ+IG5CBa2G/i82stlrqyU9+FPNvJ5Ei4nXOey9DIYjTXuQPCZJZJxDvwL9arCm2w9bUtPjM7a6IE1puFQ0POyUESSJhw5caXy/LpxDuYLmGP7ohfUXaYZwBY+ZxatxiROI6SoVG+LofAM2UmOGWdcmG+nire63iHCDAqknuyh7uYK/TY+oAaceNV6kf1RSjFOM5I49Nn9wf09o8PlHc944Bz1mcxEECgYEA5UfVa3lxOuQ0+pgdz75xKXP6bpEZ+f36Q/mbIKtbMNzAMJY6Oa16bTCqAzom7tfKCYmQ2rWkA5YoP0/cuiezL7Vi2DWA/nsFZYUSfRKYa/bBImNQiyb1EtLUGcApfcx68LptJVtm4RB1/e51YHEd7ItwB/sdyXGQm72pKEzwluECgYEA4gNcHZARlON8AX49WNkNc+gVqePHV4J8rseDhPJTZsQ6OjfA3KmNCIGTaV2/I8NWEycx4xLDUOj5HwU3rTp4GN44goiLABf+5kLoKs+ObAIs4albo635XlQYD0t1nZN6bs+acMzJ4adZwnzU88yG4Yj4g1C6lx6Ynu5ZUJUbKtsCgYEAl7R+9vzEueWzVDgASavFrlrp0ey6VloBFKb8SJJ45Qy7MarE3dL2FXdElpwMlK49JTBbowraefEJslKCRr3r5t5Kh6pnLnpxqKlzAUSji5QaWEmESn49W/YZluw5x93bXprLixM+MB63I4x7J5PQ6+ma9/zkyZwVxaapXVwDOKECgYBd45lrqoKzQEEueZvQgfKFuN7vAXG5F7rl/HnVS7l70n6B2tFimYi+BN4RAmG54JasRDcEJrI+tVlwGoHDk6t6YS5Gg6SCuHUqgJbj2e9HTSwJ3on0F/ykw/huuiE1AaP1zoZQ37Hp7NRr5+GrGcbagEUEgA/TYWFzfH5b7GUpywKBgQCqI59ozm8B90xXzoqTNr58/86JzYyHuWI+CzAsBH6F3FZXQHp3RcwC2Homp8FzGXOWgTK33ZVxsQAse6CUd4j0ss9tPIEKUcge7IrmIn5ZOvCOpc2jkB0O9cmmxo6carIvaw0jjgY7E0rUhsOme78hKPAIrpQaLH5sJCXp6E7IXg==`
+)
+
+func TestClient_SendMiniTemplateMessageBill(t *testing.T) {
+	client := NewClient(appid, privateKey)
+	param := RequestParam{
+		PageUrl:    `alipays://platformapi/startapp?appId=2019031863556379&query=s%3D1`,
+		SendTime:   time.Now().AddDate(0, -1, 0),
+		TemplateId: `f59b2d5ad69b4a9eadc86399ce321988`,
+		ToUserId:   `2088612125906178`,
+		Mobile:     `18270431366`,
+	}
+	client.SendMiniTemplateMessageBill(param)
+}
