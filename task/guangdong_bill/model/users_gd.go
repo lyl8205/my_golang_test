@@ -1,8 +1,8 @@
 package model
 
 import (
-	"crontab/abs"
-	"crontab/table/sanhe_gdmobile"
+	"go_test/abs"
+	"go_test/table/sanhe_gdmobile"
 )
 
 type usersGd struct {

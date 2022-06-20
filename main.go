@@ -2,11 +2,16 @@ package main
 
 import (
 	myTool "codeup.aliyun.com/5f69c1766207a1a8b17fda8e/sanhe_library/tool"
+	"codeup.aliyun.com/5f69c1766207a1a8b17fda8e/sanhe_library/tool/logger"
 	"encoding/json"
 	"fmt"
 	"go_test/abs"
+	"go_test/config"
+	"go_test/library/sdk/sanhe"
+	sanheerpflow "go_test/table/sanhe_erp_flow"
 	"go_test/table/sanhe_gdmobile"
-	//"go_test/task/guangdong_bill/service"
+	"go_test/task/guangdong_bill/service"
+	"time"
 )
 
 //广东移动检验接口返回数据格式构造
@@ -39,8 +44,8 @@ type MiniTemplateRes struct {
 
 func main()  {
 	var (
-		ExecutionAuantity = 60
-		limitNum = 200
+		ExecutionAuantity = 1
+		limitNum = 1
 		starId = 0
 		subsprod Subsprod
 		mobileLists []sanhe_gdmobile.TUsersGdMobile
@@ -49,6 +54,12 @@ func main()  {
 	usersGd := NewUsersGd()
 	usersGd.GetSanHeGdMobile().Table(sanhe_gdmobile.TUsersGdTN).Where("id > ?", starId).Order(`id asc`).Limit(limitNum).Scan(&mobileLists)
 
+	fmt.Printf("%+v\n", mobileLists)
+	var uset []sanhe_gdmobile.TUsersGdMobile
+	mobileLists = append(uset, sanhe_gdmobile.TUsersGdMobile{
+		Mobile:    `13580756197`,
+		Uid:       `2088802919102703`,
+	})
 	fmt.Printf("%+v\n", mobileLists)
 
 	//计算要开启的goroutine
@@ -75,8 +86,12 @@ func main()  {
 
 			for _,v := range mobile {
 				postData := make(map[string]interface{})
+				postValue := make(map[string]string)
 				data, _ := json.Marshal(&v)
 				if err := json.Unmarshal(data, &postData); err != nil {
+					fmt.Printf("%v", err)
+				}
+				if err := json.Unmarshal(data, &postValue); err != nil {
 					fmt.Printf("%v", err)
 				}
 				fmt.Printf("postData:%v\n", postData)
@@ -87,20 +102,30 @@ func main()  {
 				}
 				//fmt.Printf("subsprod返回：%v\n", subsprod)
 				promap := subsprod.Data.Result.Prodchinfolist.Prodchinfo
+
 				//发小程序模板消息
-				for _,v := range promap{
-					pr,_ := v["prodid"]
+				for _,vv := range promap{
+					pr,_ := vv["prodid"]
 					//prod.10086000034679
-					if(pr == "JYPT999.200828390257.0"){
+					if(pr == "prod.10086000034679"){
+						fmt.Printf("发小程序消息:%v\n", postData["mobile"])
 						//发模板消息
-						//service.NewBillSending().SendMobileData()
-						//fmt.Printf("%v\n", "发模板消息")
+						sendres,_ := sendMessage(postValue["mobile"],postValue["uid"],1)
+						fmt.Printf("发小程序消息返回:%v\n", sendres)
+						if !sendres {
+							fmt.Printf("发生活号消息:%v\n", postData["mobile"])
+							sendres,_ = sendMessage(postValue["mobile"],postValue["uid"],2)
+							fmt.Printf("发生活号消息返回:%v\n", sendres)
+						}
+
+						minRes := MiniTemplateRes{v, sendres}
+						miniTemplateRes <- minRes
+						break
 					}
 				}
-				var result bool
-				result = true
-				minRes := MiniTemplateRes{v, result}
-				miniTemplateRes <- minRes
+				//fmt.Printf("sendres:%v\n", sendres)
+				//minRes := MiniTemplateRes{v, sendres}
+				//miniTemplateRes <- minRes
 			}
 
 		}(start,end)
@@ -108,6 +133,7 @@ func main()  {
 
 	counter := 0
 	successNum := 0
+	failNum := 0
 	failUser := make([]sanhe_gdmobile.TUsersGdMobile, 0)
 
 Loop:
@@ -118,20 +144,19 @@ Loop:
 				if resmini.Result {
 					successNum++
 				}else{
+					failNum++
 					failUser = append(failUser,resmini.User)
 				}
-				
+
 				if counter == limitNum {
-					fmt.Printf(`进入,successNum==:%d,sendType:%d,counter:%d`, successNum, 1, counter)
+					fmt.Printf(`进入,successNum==:%d,failNum==:%d,counter:%d`, successNum,failNum,counter)
 					close(miniTemplateRes)
 					break Loop
 				}
-			//case <-time.After(60 * time.Second):
-			//	close(miniTemplateRes)
-			//	fmt.Println("超时关闭")
-			//	logger.Use(`gd`).Info(fmt.Sprintf(`超时关闭,successNum==:%d,sendType:%d,counter:%d`, successNum, 1, counter))
-			//	done<-true
-			//	break
+			case <-time.After(60 * time.Second):
+				close(miniTemplateRes)
+				logger.Use(`gd`).Info(fmt.Sprintf(`超时关闭,successNum==:%d,sendType:%d,counter:%d`, successNum, 1, counter))
+				break
 		}
 	}
 	fmt.Println("程序结束")
@@ -155,6 +180,51 @@ type usersGd struct {
 
 func NewUsersGd() *usersGd {
 	return &usersGd{}
+}
+
+func sendMessage(mobile,uid string,sendType int) (res bool, err error) {
+	var (
+		SendTime          = time.Now().AddDate(0, -1, 0)
+		alipaySetting sanheerpflow.ShAlipaySetting
+		CommonKey         = config.Key.BillKey.CommonKey[`gd`]
+	)
+	y, m, _ := SendTime.Date()
+	reqParam := sanhe.RequestParam{
+		Year:  y,
+		Month: int(m),
+	}
+	switch sendType {
+	case 1:
+		alipaySetting = service.NewAlipaySetting().GetAlipaySetting(CommonKey.AppletAppId)
+		reqParam.TemplateId = CommonKey.MiNiTemplateId
+		reqParam.PageUrl = CommonKey.MiNiPageUrl
+		reqParam.Mobile = mobile
+		reqParam.ToUserId = uid
+	case 2:
+		alipaySetting = service.NewAlipaySetting().GetAlipaySetting(CommonKey.LifeNumberAppId)
+		reqParam.TemplateId = CommonKey.LifeTemplateId
+		reqParam.PageUrl = CommonKey.LifePageUrl
+		reqParam.Mobile = mobile
+		reqParam.ToUserId = uid
+	}
+	if alipaySetting.Id <= 0 {
+		myTool.PushSimpleMessage(`支付宝配置有误`, false)
+		return false, fmt.Errorf(`支付宝配置有误`)
+	}
+	aliClient := sanhe.NewClient(alipaySetting.Appid, alipaySetting.RsaPrivateKey)
+
+	if aliClient.AliClient.AppId == `` {
+		myTool.PushSimpleMessage(`支付宝配置初始化失败`, false)
+		return false, fmt.Errorf(`支付宝配置初始化失败`)
+	}
+
+	switch sendType {
+	case 1:
+		res = aliClient.SendMiniTemplateMessageBill(reqParam)
+	case 2:
+		res = aliClient.SendMessageSingleBill(reqParam)
+	}
+	return res,nil
 }
 
 
