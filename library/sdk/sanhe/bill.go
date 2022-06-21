@@ -15,8 +15,10 @@ type RequestParam struct {
 	Mobile     string
 	PageUrl    string
 	TemplateId string
+	ProductName string
 	Year       int
 	Month      int
+	Day      int
 	SendTime   time.Time
 }
 
@@ -25,8 +27,9 @@ func (c *client) SendMiniTemplateMessageBill(param RequestParam) bool {
 	// param.TemplateId = ``
 	// return false
 	data := map[string]interface{}{
-		"keyword1": map[string]interface{}{"value": param.Mobile},
-		"keyword2": map[string]interface{}{"value": fmt.Sprintf(`%d年%d月`, param.Year, param.Month)},
+		"keyword1": map[string]interface{}{"value": param.ProductName},
+		"keyword2": map[string]interface{}{"value": param.Mobile},
+		"keyword3": map[string]interface{}{"value": fmt.Sprintf(`%d年%d月%d日`, param.Year, param.Month,param.Day)},
 	}
 	ReParam := alipay.MiniTemplateMessageReq{
 		ToUserId:       param.ToUserId,   //接收模板消息的用户 user_id，一般为2088开头的16为数字。
@@ -46,13 +49,14 @@ func (c *client) SendMiniTemplateMessageBill(param RequestParam) bool {
 // 生活号发送单一模板消息
 func (c *client) SendMessageSingleBill(param RequestParam) bool {
 	// return true
-	context := make(map[string]interface{}, 7)
+	context := make(map[string]interface{}, 8)
 	context[`url`] = param.PageUrl
 	context[`action_name`] = `点击查看详情`
-	context[`keyword1`] = map[string]string{"value": param.Mobile, "color": "#000000"}
-	context[`keyword2`] = map[string]string{"value": fmt.Sprintf(`%d年%d月`, param.Year, param.Month), "color": "#000000"}
-	context[`first`] = map[string]string{"value": `您好,` + fmt.Sprintf(`%d`, param.Month) + `月话费账单已出`, "color": "#000000"}
-	context[`remark`] = map[string]string{"value": `点击查看详情看账单及了解首月0元享90G等更多优惠`, "color": "#000000"}
+	context[`keyword1`] = map[string]string{"value": param.ProductName, "color": "#000000"}
+	context[`keyword2`] = map[string]string{"value": param.Mobile, "color": "#000000"}
+	context[`keyword3`] = map[string]string{"value": fmt.Sprintf(`%d年%d月%d日`, param.Year, param.Month,param.Day), "color": "#000000"}
+	context[`first`] = map[string]string{"value": `您有权益待领取`, "color": "#000000"}
+	context[`remark`] = map[string]string{"value": `点击查看详情领取,已领取请忽略`, "color": "#000000"}
 	context[`head_color`] = `#000000`
 
 	reParam := alipay.MessageSingleSendReq{

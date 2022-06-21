@@ -4,6 +4,7 @@ import (
 	myTool "codeup.aliyun.com/5f69c1766207a1a8b17fda8e/sanhe_library/tool"
 	"codeup.aliyun.com/5f69c1766207a1a8b17fda8e/sanhe_library/tool/logger"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"go_test/abs"
 	"go_test/config"
@@ -40,13 +41,23 @@ type MiniTemplateRes struct {
 	Result  bool
 }
 
-
+var (
+	limitNum int
+	starId  int
+)
+func init() {
+	myTool.RegFlagVar(&limitNum, "limitNum", 1, "数量限制，默认10")
+	myTool.RegFlagVar(&starId, "starId", 0, "数量限制，默认0")
+}
 
 func main()  {
+	flag.Parse()
+	limitNum = myTool.GetFlagVar("limitNum").(int)
+	starId = myTool.GetFlagVar("starId").(int)
 	var (
 		ExecutionAuantity = 1
-		limitNum = 1
-		starId = 0
+		//limitNum = 1
+		//starId = 0
 		subsprod Subsprod
 		mobileLists []sanhe_gdmobile.TUsersGdMobile
 	)
@@ -164,7 +175,7 @@ Loop:
 
 func curl(postData map[string]interface{}) (*myTool.Response, error){
 	//r := myTool.NewRequest("https://apis.samhotele.com/api/gd/common/testCcqrysubsprods")
-	r := myTool.NewRequest("http://local.erpapi.com/api/JiYunFlow/myTest")
+	r := myTool.NewRequest("http://local.sanheerpapidev.com/api/JiYunFlow/myTest")
 
 	header := make(map[string]string)
 	header["Content-Type"] = "application/json;charset=utf-8"
@@ -188,20 +199,22 @@ func sendMessage(mobile,uid string,sendType int) (res bool, err error) {
 		alipaySetting sanheerpflow.ShAlipaySetting
 		CommonKey         = config.Key.BillKey.CommonKey[`gd`]
 	)
-	y, m, _ := SendTime.Date()
+	y, m, d := SendTime.Date()
 	reqParam := sanhe.RequestParam{
 		Year:  y,
 		Month: int(m),
+		Day: int(d),
 	}
 	switch sendType {
 	case 1:
 		alipaySetting = service.NewAlipaySetting().GetAlipaySetting(CommonKey.AppletAppId)
-		reqParam.TemplateId = CommonKey.MiNiTemplateId
+		reqParam.ProductName = CommonKey.MiNiProductName
 		reqParam.PageUrl = CommonKey.MiNiPageUrl
 		reqParam.Mobile = mobile
 		reqParam.ToUserId = uid
 	case 2:
 		alipaySetting = service.NewAlipaySetting().GetAlipaySetting(CommonKey.LifeNumberAppId)
+		reqParam.ProductName = CommonKey.LifeProductName
 		reqParam.TemplateId = CommonKey.LifeTemplateId
 		reqParam.PageUrl = CommonKey.LifePageUrl
 		reqParam.Mobile = mobile
